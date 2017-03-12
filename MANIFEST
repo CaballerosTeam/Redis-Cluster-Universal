@@ -1,0 +1,10 @@
+Changes
+Makefile.PL
+MANIFEST
+ppport.h
+README
+Universal.xs
+t/01_import.t
+t/02_get_hash_slot_by_key.t
+lib/Redis/Cluster/Universal.pm
+typemap

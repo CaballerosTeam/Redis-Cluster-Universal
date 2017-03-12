@@ -1,0 +1,6 @@
+Revision history for Perl extension Redis::Cluster::Universal.
+
+0.0.1  Sat Mar 11 12:59:49 2017
+	- original version; created by h2xs 1.23 with options
+		-A -b 5.10.1 -v 0.0.1 -n Redis::Cluster::Universal
+
