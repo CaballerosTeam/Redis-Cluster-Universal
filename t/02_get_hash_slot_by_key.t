@@ -2,11 +2,16 @@ use strict;
 use warnings;
 use Test::More;
 
-
 my $expected_key_hash_slot_map = {
-    spam => 1201,
-    foo  => 12182,
-    egg  => 15975,
+    spam                                                           => 1201,
+    foo                                                            => 12182,
+    egg                                                            => 15975,
+    16384                                                          => 3025,
+    'cluster-1'                                                    => 11875,
+    '123testing123'                                                => 14520,
+    'Redis::Cluster::Universal::_get_hash_slot_by_key(key:"spam")' => 5285,
+    ''                                                             => 0,
+    'приветредис'                                                  => 1654,
 };
 
 BEGIN {
