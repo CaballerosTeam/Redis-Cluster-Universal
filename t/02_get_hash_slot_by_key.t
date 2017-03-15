@@ -22,7 +22,7 @@ BEGIN {
 
 while (my ($key, $expected) = each(%{$expected_key_hash_slot_map})) {
     my $actual = Redis::Cluster::Universal::_get_hash_slot_by_key($key);
-    is($actual, $expected, sprintf("Hash slot for key '%s' doesn't match", $key));
+    is($actual, $expected, sprintf("Hash slot for key '%s'", $key));
 }
 
 done_testing();
