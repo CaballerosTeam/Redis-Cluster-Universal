@@ -6,11 +6,12 @@ use warnings;
 use Carp;
 use XSLoader;
 use Module::Load;
+use Redis::Cluster::Node;
 
 our $VERSION = '0.0.1';
 
 use constant {
-    CLUSTER_SLOTS_KEY => '_cluster_slots',
+    CLUSTER_NODES_KEY => '_cluster_nodes',
 };
 
 XSLoader::load('Redis::Cluster::Universal', $VERSION);
@@ -22,32 +23,70 @@ sub new {
     Carp::confess("[!] Not an ARRAY ref in keyword argument 'nodes'") if (ref($kwargs{nodes}) ne 'ARRAY');
     Carp::confess("[!] Transport module not specified") unless(defined($kwargs{transport}));
 
-    eval {
-        Module::Load::load($kwargs{transport});
-    };
+    my $self = bless(\%kwargs, $class);
 
-    Carp::confess($@) if ($@);
+    $self->set_cluster_nodes($kwargs{nodes});
 
-    return bless(\%kwargs, $class);
+    return $self;
 }
 
-##@method
-#sub get_node_by_key {
-#    my ($self, $key) = @_;
-#
-##    my $hash_slot = _get_hash_slot_by_key($key);
-#}
-#
-##@method
-#sub get_cluster_slots {
-#    my ($self) = @_;
-#
-#    unless (defined($self->{CLUSTER_SLOTS_KEY()})) {
-#
-#    }
-#
-#    return $self->{CLUSTER_SLOTS_KEY()};
-#}
+#@method
+sub get_cluster_slots {
+    my ($self) = @_;
+
+    my $key = '_cluster_slots';
+    unless (defined($self->{$key})) {
+        my $cluster_nodes = $self->get_cluster_nodes();
+        Carp::confess("[!] Not an ARRAY ref in cluster nodes") if (ref($cluster_nodes) ne 'ARRAY');
+
+        my $counter = 0;
+        my $cluster_slots;
+        foreach my Redis::Cluster::Node $node (@{$cluster_nodes}) {
+            my $handler = $node->get_handler();
+            $cluster_slots = $handler->cluster_slots();
+            last if (ref($cluster_slots) eq 'ARRAY' && @{$cluster_slots});
+
+            $counter++;
+            Carp::confess("[!] Can't fetch cluster slots info") if ($counter > $#{$cluster_nodes});
+        }
+
+        $cluster_slots = [sort {$a->[0] <=> $b->[0]} @{$cluster_slots}];
+
+        $self->set_cluster_nodes([map join(':', @{$_->[2]}), @{$cluster_slots}]);
+
+        $self->{$key} = [map [$_->[0], $_->[1]], @{$cluster_slots}];
+    }
+
+    return $self->{$key};
+}
+
+#@method
+sub get_cluster_nodes {
+    my ($self) = @_;
+
+    return $self->{CLUSTER_NODES_KEY()};
+}
+
+#@method
+sub set_cluster_nodes {
+    my ($self, $node_list) = @_;
+
+    Carp::confess("[!] Not an ARRAY ref in 'node_list'") if (ref($node_list) ne 'ARRAY');
+
+    $self->{CLUSTER_NODES_KEY()} = [map {Redis::Cluster::Node->new(
+        address   => $_,
+        transport => $self->get_transport(),
+    )} @{$node_list}];
+
+    return 1;
+}
+
+#@method
+sub get_transport {
+    my ($self) = @_;
+
+    return $self->{transport};
+}
 
 1;
 __END__
