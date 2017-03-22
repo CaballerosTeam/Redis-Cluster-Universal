@@ -5,10 +5,42 @@
 
 #include "ppport.h"
 
+#include "string.h"
 #include "src/crc.h"
 
 #define MAX_HASH_SLOT   16384
 #define NOT_FOUND       -1
+
+char * _hash_tag_to_key(char *key) {
+    char *openTag = strstr(key, "{");
+
+    if (openTag == NULL) {
+        return key;
+    }
+
+    int openTagPosition = openTag - key + 1;
+
+    char *closeTag = strstr(key, "}");
+
+    if (closeTag == NULL) {
+        return key;
+    }
+
+    int closeTagPosition = closeTag - key;
+
+    if (closeTagPosition < openTagPosition) {
+        return key;
+    }
+
+    int len = closeTagPosition - openTagPosition;
+    char *result = malloc((len + 1) * sizeof(char));
+
+    strncpy(result, key + openTagPosition, len);
+
+    result[len] = '\0';
+
+    return result;
+}
 
 MODULE = Redis::Cluster::Universal		PACKAGE = Redis::Cluster::Universal
 
@@ -103,5 +135,11 @@ _find_node_index(hash_slots_ref, hash_slot)
         }
 
         RETVAL = NOT_FOUND;
+    OUTPUT:
+        RETVAL
+
+char *
+_hash_tag_to_key(key)
+        char *  key
     OUTPUT:
         RETVAL
