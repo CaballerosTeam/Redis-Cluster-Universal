@@ -9,6 +9,7 @@ use Module::Load;
 use Redis::Cluster::Node;
 
 our $VERSION = '0.0.1';
+our $AUTOLOAD;
 
 use constant {
     CLUSTER_NODES_KEY => '_cluster_nodes',
@@ -30,7 +31,32 @@ sub new {
     return $self;
 }
 
+sub AUTOLOAD {
+    my ($self, @args) = @_;
+
+    my $command_name = [split('::', $AUTOLOAD)]->[-1];
+
+    {
+        no strict 'refs';
+        *{$AUTOLOAD} = sub { $self->_exec_command($command_name, @args); };
+    }
+
+    goto &{$AUTOLOAD};
+}
+
 #@method
+sub _exec_command {
+    my ($self, $command_name, @args) = @_;
+
+    my $hash_tag = $args[0];
+    my $node = $self->get_cluster_node($hash_tag);
+    my $handler = $node->get_handler();
+
+    return $handler->$command_name(@args);
+}
+
+#@method
+#@returns Redis::Cluster::Node
 sub get_cluster_node {
     my ($self, $hash_tag) = @_;
 
