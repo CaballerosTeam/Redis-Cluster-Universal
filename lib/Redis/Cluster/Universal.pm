@@ -31,6 +31,21 @@ sub new {
 }
 
 #@method
+sub get_cluster_node {
+    my ($self, $hash_tag) = @_;
+
+    Carp::confess("[!] Missing required argument 'hash_tag'") unless (defined($hash_tag));
+
+    my $key = _hash_tag_to_key($hash_tag);
+    my $hash_slot = _get_hash_slot_by_key($key);
+    my $cluster_slots = $self->get_cluster_slots();
+    my $node_index = _find_node_index($cluster_slots, $hash_slot);
+    my $cluster_nodes = $self->get_cluster_nodes();
+
+    return $cluster_nodes->[$node_index];
+}
+
+#@method
 sub get_cluster_slots {
     my ($self) = @_;
 

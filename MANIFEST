@@ -9,5 +9,6 @@ t/02_get_hash_slot_by_key.t
 t/03_find_node_index.t
 t/04_get_cluster_slots.t
 t/05_hash_tag_to_key.t
+t/06_get_cluster_node.t
 lib/Redis/Cluster/Universal.pm
 typemap
