@@ -52,7 +52,28 @@ sub _exec_command {
     my $node = $self->get_cluster_node($hash_tag);
     my $handler = $node->get_handler();
 
-    return $handler->$command_name(@args);
+    my $result;
+    eval {
+        $result = $handler->$command_name(@args);
+    };
+
+    my $refresh = $self->_get_refresh();
+
+    if ($@) {
+        if ($self->_is_moved($@)) {
+            if ($refresh) {
+                Carp::confess("[!] Twice got MOVED error, can't refresh cluster nodes info");
+            }
+            else {
+                $self->_set_refresh(1);
+                return $self->_exec_command($command_name, @args);
+            }
+        }
+    }
+
+    $self->_set_refresh(0) if ($refresh);
+
+    return $result;
 }
 
 #@method
@@ -71,12 +92,25 @@ sub get_cluster_node {
     return $cluster_nodes->[$node_index];
 }
 
+#@staticmethod
+#@method
+sub _is_moved
+{
+    my (undef, $error_message) = @_;
+
+    Carp::confess("[!] Missing required argument 'error_message'") unless (defined($error_message));
+
+    return index($error_message, 'MOVED') != -1 ? 1 : 0;
+}
+
 #@method
 sub get_cluster_slots {
     my ($self) = @_;
 
     my $key = '_cluster_slots';
-    unless (defined($self->{$key})) {
+    my $refresh = $self->_get_refresh();
+
+    if (!defined($self->{$key}) || $refresh) {
         my $cluster_nodes = $self->get_cluster_nodes();
         Carp::confess("[!] Not an ARRAY ref in cluster nodes") if (ref($cluster_nodes) ne 'ARRAY');
 
@@ -99,6 +133,25 @@ sub get_cluster_slots {
     }
 
     return $self->{$key};
+}
+
+#@method
+sub _get_refresh
+{
+    my ($self) = @_;
+
+    return $self->{refresh};
+}
+
+#@method
+sub _set_refresh
+{
+    my ($self, $flag) = @_;
+
+    $flag //= 0;
+    $self->{refresh} = $flag;
+
+    return 1;
 }
 
 #@method
