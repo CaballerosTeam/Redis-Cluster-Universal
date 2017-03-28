@@ -34,7 +34,7 @@ SKIP: {
 
     skip(sprintf("Can't load '%s' module", $module)) if ($@);
 
-    my $rcu = Redis::Cluster::Universal->new(nodes => $node_list, transport => 'Redis::Fast');
+    my $rcu = Redis::Cluster::Universal->new(nodes => $node_list, transport => $module);
     $rcu->{_cluster_slots} = $hash_slot_list;
 
     foreach my $hash_tag (keys(%{$expected_hash_tag_node_map}))

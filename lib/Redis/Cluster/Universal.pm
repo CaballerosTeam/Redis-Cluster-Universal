@@ -69,6 +69,9 @@ sub _exec_command {
                 return $self->_exec_command($command_name, @args);
             }
         }
+        else {
+            die($@);
+        }
     }
 
     $self->_set_refresh(0) if ($refresh);
@@ -100,7 +103,18 @@ sub _is_moved
 
     Carp::confess("[!] Missing required argument 'error_message'") unless (defined($error_message));
 
-    return index($error_message, 'MOVED') != -1 ? 1 : 0;
+    return index($error_message, ' MOVED ') != -1 ? 1 : 0;
+}
+
+#@staticmethod
+#@method
+sub _is_ask
+{
+    my (undef, $error_message) = @_;
+
+    Carp::confess("[!] Missing required argument 'error_message'") unless (defined($error_message));
+
+    return index($error_message, ' ASK ') != -1 ? 1 : 0;
 }
 
 #@method

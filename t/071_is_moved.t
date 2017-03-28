@@ -7,7 +7,7 @@ my $positive_error_messages = [
 ];
 
 my $negative_error_messages = [
-    '[get] ASK 5285 127.0.0.1:7001',
+    '[setex] ASK 13272 127.0.0.1:7002',
 ];
 
 BEGIN {

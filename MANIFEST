@@ -11,6 +11,9 @@ t/040_get_cluster_slots.t
 t/050_hash_tag_to_key.t
 t/060_get_cluster_node.t
 t/070_redis_command.t
-t/071_redirection.t
+t/071_is_moved.t
+t/072_moved_redirection.t
+t/073_is_ask.t
+t/074_ask_redirection.t
 lib/Redis/Cluster/Universal.pm
 typemap
