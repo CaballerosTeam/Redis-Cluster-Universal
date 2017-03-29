@@ -30,7 +30,7 @@ sub get_handler {
         my Redis $transport = $self->get_transport();
         my $address = $self->get_address();
 
-        $self->{$key} = $transport->new(server => $address);
+        $self->{$key} = $transport->new(server => $address, ecoding => undef);
     }
 
     return $self->{$key};

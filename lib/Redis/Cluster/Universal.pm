@@ -69,6 +69,11 @@ sub _exec_command {
                 return $self->_exec_command($command_name, @args);
             }
         }
+        elsif ($self->_is_ask($@)) {
+            my $rows = [split(/[\r\n]+/, $@)];
+            my $destination_node_address = [split(' ', $rows->[0])]->[3];
+            warn $destination_node_address;
+        }
         else {
             die($@);
         }
@@ -141,7 +146,7 @@ sub get_cluster_slots {
 
         $cluster_slots = [sort {$a->[0] <=> $b->[0]} @{$cluster_slots}];
 
-        $self->set_cluster_nodes([map join(':', @{$_->[2]}), @{$cluster_slots}]);
+        $self->set_cluster_nodes([map join(':', @{$_->[2]}[0..1]), @{$cluster_slots}]);
 
         $self->{$key} = [map [$_->[0], $_->[1]], @{$cluster_slots}];
     }

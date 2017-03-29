@@ -12,6 +12,7 @@ SKIP: {
     skip("Environment variable REDIS_CLUSTER isn't defined") unless ($ENV{REDIS_CLUSTER});
 
     my $module = 'Redis::Fast';
+#    my $module = 'Redis';
     eval {
         Module::Load::load($module);
     };
