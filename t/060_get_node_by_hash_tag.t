@@ -23,7 +23,7 @@ my $expected_hash_tag_node_map = {
 BEGIN {
     my $module = 'Redis::Cluster::Universal';
     use_ok($module);
-    can_ok($module, 'get_cluster_node');
+    can_ok($module, 'get_node_by_hash_tag');
 };
 
 SKIP: {
@@ -39,7 +39,7 @@ SKIP: {
 
     foreach my $hash_tag (keys(%{$expected_hash_tag_node_map}))
     {
-        my Redis::Cluster::Node $node = $rcu->get_cluster_node($hash_tag);
+        my Redis::Cluster::Node $node = $rcu->get_node_by_hash_tag($hash_tag);
 
         ok(Scalar::Util::blessed($node), sprintf("Node for key '%s' is object", $hash_tag));
         ok($node->isa('Redis::Cluster::Node'),

@@ -30,7 +30,7 @@ SKIP: {
     my $node_index = Redis::Cluster::Universal::_find_node_index($cluster_slots, $hash_slot);
     my $new_node_index = $node_index == 0 ? $#{$cluster_slots} : $node_index - 1;
 
-    my $cluster_node_objects = $rcu->{Redis::Cluster::Universal::CLUSTER_NODES_KEY()};
+    my $cluster_node_objects = $rcu->{Redis::Cluster::Universal::CLUSTER_NODES_LIST()};
     splice(@{$cluster_node_objects}, $new_node_index, 0, splice(@{$cluster_node_objects}, $node_index, 1));
 
     my $actual = $rcu->get($key);

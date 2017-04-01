@@ -12,7 +12,8 @@ our $VERSION = '0.0.1';
 our $AUTOLOAD;
 
 use constant {
-    CLUSTER_NODES_KEY => '_cluster_nodes',
+    CLUSTER_NODES_LIST => '_cluster_nodes_list',
+    CLUSTER_NODES_MAP  => '_cluster_nodes_map',
 };
 
 XSLoader::load('Redis::Cluster::Universal', $VERSION);
@@ -49,7 +50,10 @@ sub _exec_command {
     my ($self, $command_name, @args) = @_;
 
     my $hash_tag = $args[0];
-    my $node = $self->get_cluster_node($hash_tag);
+    my $node = $self->get_node_by_hash_tag($hash_tag);
+
+    Carp::confess(sprintf("[!] Couldn't fetch node for key: '%s'", $hash_tag)) unless (defined($node));
+
     my $handler = $node->get_handler();
 
     my $result;
@@ -71,8 +75,16 @@ sub _exec_command {
         }
         elsif ($self->_is_ask($@)) {
             my $rows = [split(/[\r\n]+/, $@)];
-            my $destination_node_address = [split(' ', $rows->[0])]->[3];
-            warn $destination_node_address;
+            my $destination_node_address = [split(/,?\s+/, $rows->[0])]->[3];
+            my $destination_node = $self->get_node_by_address($destination_node_address);
+
+            Carp::confess(sprintf("[!] ASK redirection detected, couldn't fetch destination node: '%s'",
+                $destination_node_address)) unless (defined($destination_node));
+
+            my $destination_handler = $destination_node->get_handler();
+
+            $destination_handler->asking();
+            $result = $destination_handler->$command_name(@args);
         }
         else {
             die($@);
@@ -86,7 +98,7 @@ sub _exec_command {
 
 #@method
 #@returns Redis::Cluster::Node
-sub get_cluster_node {
+sub get_node_by_hash_tag {
     my ($self, $hash_tag) = @_;
 
     Carp::confess("[!] Missing required argument 'hash_tag'") unless (defined($hash_tag));
@@ -100,10 +112,19 @@ sub get_cluster_node {
     return $cluster_nodes->[$node_index];
 }
 
+#@method
+#@returns Redis::Cluster::Node
+sub get_node_by_address {
+    my ($self, $node_address) = @_;
+
+    Carp::confess("[!] Missing required argument 'node_address'") unless (defined($node_address));
+
+    return $self->{CLUSTER_NODES_MAP()}->{$node_address};
+}
+
 #@staticmethod
 #@method
-sub _is_moved
-{
+sub _is_moved {
     my (undef, $error_message) = @_;
 
     Carp::confess("[!] Missing required argument 'error_message'") unless (defined($error_message));
@@ -113,8 +134,7 @@ sub _is_moved
 
 #@staticmethod
 #@method
-sub _is_ask
-{
+sub _is_ask {
     my (undef, $error_message) = @_;
 
     Carp::confess("[!] Missing required argument 'error_message'") unless (defined($error_message));
@@ -155,16 +175,14 @@ sub get_cluster_slots {
 }
 
 #@method
-sub _get_refresh
-{
+sub _get_refresh {
     my ($self) = @_;
 
     return $self->{refresh};
 }
 
 #@method
-sub _set_refresh
-{
+sub _set_refresh {
     my ($self, $flag) = @_;
 
     $flag //= 0;
@@ -177,7 +195,7 @@ sub _set_refresh
 sub get_cluster_nodes {
     my ($self) = @_;
 
-    return $self->{CLUSTER_NODES_KEY()};
+    return $self->{CLUSTER_NODES_LIST()};
 }
 
 #@method
@@ -186,10 +204,17 @@ sub set_cluster_nodes {
 
     Carp::confess("[!] Not an ARRAY ref in 'node_list'") if (ref($node_list) ne 'ARRAY');
 
-    $self->{CLUSTER_NODES_KEY()} = [map {Redis::Cluster::Node->new(
-        address   => $_,
-        transport => $self->get_transport(),
-    )} @{$node_list}];
+    foreach my $node_address (@{$node_list})
+    {
+        my $node = Redis::Cluster::Node->new(
+            address   => $node_address,
+            transport => $self->get_transport(),
+        );
+
+        push(@{$self->{CLUSTER_NODES_LIST()}}, $node);
+
+        $self->{CLUSTER_NODES_MAP()}->{$node_address} = $node;
+    }
 
     return 1;
 }
