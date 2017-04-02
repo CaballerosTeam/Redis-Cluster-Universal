@@ -10,25 +10,34 @@ BEGIN {
 SKIP: {
     skip("Environment variable REDIS_CLUSTER isn't defined") unless ($ENV{REDIS_CLUSTER});
 
-    my $module = 'Redis::Fast';
-    eval {
-        Module::Load::load($module);
-    };
+    my $cnt;
+    my $module_list = [qw/Redis Redis::Fast/];
 
-    skip(sprintf("Can't load '%s' module", $module)) if ($@);
+    foreach my $module (@{$module_list})
+    {
+        eval {
+            Module::Load::load($module);
+        };
 
-    my $cluster_nodes = [split(/[\s,;]+/, $ENV{REDIS_CLUSTER})];
-    my $rcu = Redis::Cluster::Universal->new(nodes => $cluster_nodes, transport => $module);
+        next if ($@);
 
-    my $key = 'Redis::Cluster::Universal::_get_hash_slot_by_key(key:"spam")';
-    my $value = 'Some important information';
+        $cnt++;
 
-    ok($rcu->setex($key, 3600, $value), 'Set the value and expiration of a key');
+        my $cluster_nodes = [split(/[\s,;]+/, $ENV{REDIS_CLUSTER})];
+        my $rcu = Redis::Cluster::Universal->new(nodes => $cluster_nodes, transport => $module);
 
-    my $actual = $rcu->get($key);
-    my $expected = $value;
+        my $key = 'Redis::Cluster::Universal::_get_hash_slot_by_key(key:"spam")';
+        my $value = 'Some important information';
 
-    is($actual, $expected, 'Get the value');
+        ok($rcu->setex($key, 3600, $value), 'Set the value and expiration of a key');
+
+        my $actual = $rcu->get($key);
+        my $expected = $value;
+
+        is($actual, $expected, 'Get the value');
+    }
+
+    skip(sprintf("Can't load any of the modules: %s", join(', ', @{$module_list}))) unless ($cnt);
 }
 
 done_testing();

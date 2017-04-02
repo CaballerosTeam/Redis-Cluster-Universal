@@ -204,6 +204,9 @@ sub set_cluster_nodes {
 
     Carp::confess("[!] Not an ARRAY ref in 'node_list'") if (ref($node_list) ne 'ARRAY');
 
+    $self->{CLUSTER_NODES_LIST()} = [];
+    $self->{CLUSTER_NODES_MAP()} = {};
+
     foreach my $node_address (@{$node_list})
     {
         my $node = Redis::Cluster::Node->new(

@@ -4,7 +4,7 @@ use Test::More;
 use Scalar::Util;
 use Redis::Cluster::Node;
 
-my $node_list = ['127.0.0.0:7001', '127.0.0.1:7002', '127.0.0.1:7003'];
+my $cluster_nodes = ['127.0.0.0:7001', '127.0.0.1:7002', '127.0.0.1:7003'];
 my $hash_slot_list = [[0, 5460], [5461, 10922], [10923, 16383]];
 my $expected_hash_tag_node_map = {
     spam                                                           => '127.0.0.0:7001',
@@ -27,29 +27,38 @@ BEGIN {
 };
 
 SKIP: {
-    my $module = 'Redis::Fast';
-    eval {
-        Module::Load::load($module);
-    };
+    my $cnt;
+    my $module_list = [qw/Redis Redis::Fast/];
 
-    skip(sprintf("Can't load '%s' module", $module)) if ($@);
-
-    my $rcu = Redis::Cluster::Universal->new(nodes => $node_list, transport => $module);
-    $rcu->{_cluster_slots} = $hash_slot_list;
-
-    foreach my $hash_tag (keys(%{$expected_hash_tag_node_map}))
+    foreach my $module (@{$module_list})
     {
-        my Redis::Cluster::Node $node = $rcu->get_node_by_hash_tag($hash_tag);
+        eval {
+            Module::Load::load($module);
+        };
 
-        ok(Scalar::Util::blessed($node), sprintf("Node for key '%s' is object", $hash_tag));
-        ok($node->isa('Redis::Cluster::Node'),
-            sprintf("Node for key '%s' is a 'Redis::Cluster::Node' instance", $hash_tag));
+        next if ($@);
 
-        my $actual = $node->get_address();
-        my $expected = $expected_hash_tag_node_map->{$hash_tag};
+        $cnt++;
 
-        is($actual, $expected, sprintf("Node address for key '%s' match", $hash_tag));
+        my $rcu = Redis::Cluster::Universal->new(nodes => $cluster_nodes, transport => $module);
+        $rcu->{_cluster_slots} = $hash_slot_list;
+
+        foreach my $hash_tag (keys(%{$expected_hash_tag_node_map}))
+        {
+            my Redis::Cluster::Node $node = $rcu->get_node_by_hash_tag($hash_tag);
+
+            ok(Scalar::Util::blessed($node), sprintf("Node for key '%s' is object", $hash_tag));
+            ok($node->isa('Redis::Cluster::Node'),
+                sprintf("Node for key '%s' is a 'Redis::Cluster::Node' instance", $hash_tag));
+
+            my $actual = $node->get_address();
+            my $expected = $expected_hash_tag_node_map->{$hash_tag};
+
+            is($actual, $expected, sprintf("Node address for key '%s' match", $hash_tag));
+        }
     }
+
+    skip(sprintf("Can't load any of the modules: %s", join(', ', @{$module_list}))) unless ($cnt);
 }
 
 done_testing();
