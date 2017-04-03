@@ -17,7 +17,10 @@ my $hash_tag_key_map = {
     '{another}fookey'   => 'another',
     'anotherfoo{key}'   => 'key',
     '{another}{foo}key' => 'another',
-    'thisfookey'        => 'thisfookey',
+    thisfookey          => 'thisfookey',
+    'foo{}{bar}'        => 'foo{}{bar}',
+    'foo{{bar}}zap'     => '{bar',
+    'foo{bar}{zap}'     => 'bar',
 };
 
 foreach my $hash_tag (keys(%{$hash_tag_key_map})) {

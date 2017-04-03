@@ -33,6 +33,11 @@ char * _hash_tag_to_key(char *key) {
     }
 
     int len = closeTagPosition - openTagPosition;
+
+    if (len == 0) {
+        return key;
+    }
+
     char *result = malloc((len + 1) * sizeof(char));
 
     strncpy(result, key + openTagPosition, len);
