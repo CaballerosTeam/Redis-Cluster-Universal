@@ -32,6 +32,10 @@ sub new {
     return $self;
 }
 
+sub DESTROY {
+    # avoid getting into the autoload method
+}
+
 sub AUTOLOAD {
     my ($self, @args) = @_;
 

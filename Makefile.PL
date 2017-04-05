@@ -6,7 +6,9 @@ use ExtUtils::MakeMaker;
 WriteMakefile(
     NAME              => 'Redis::Cluster::Universal',
     VERSION_FROM      => 'lib/Redis/Cluster/Universal.pm', # finds $VERSION
-    PREREQ_PM         => {}, # e.g., Module::Name => 1.1
+    PREREQ_PM         => {
+		'Module::Load' => 0.16,
+	}, # e.g., Module::Name => 1.1
     ($] >= 5.005 ?     ## Add these new keywords supported since 5.005
       (ABSTRACT_FROM  => 'lib/Redis/Cluster/Universal.pm', # retrieve abstract from module
        AUTHOR         => 'Sergey Yurizin <jurzin.s@gmail.com>') : ()),
