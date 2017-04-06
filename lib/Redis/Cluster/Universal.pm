@@ -37,13 +37,14 @@ sub DESTROY {
 }
 
 sub AUTOLOAD {
-    my ($self, @args) = @_;
-
     my $command_name = [split('::', $AUTOLOAD)]->[-1];
 
     {
         no strict 'refs';
-        *{$AUTOLOAD} = sub { $self->_exec_command($command_name, @args); };
+        *{$AUTOLOAD} = sub {
+            my ($self, @args) = @_;
+            $self->_exec_command($command_name, @args);
+        };
     }
 
     goto &{$AUTOLOAD};
