@@ -15,5 +15,6 @@ t/071_is_moved.t
 t/072_moved_redirection.t
 t/073_is_ask.t
 t/074_ask_redirection.t
+t/080_redis_command_multi.t
 lib/Redis/Cluster/Universal.pm
 typemap
