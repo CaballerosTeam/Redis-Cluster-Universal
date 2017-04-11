@@ -16,6 +16,8 @@ use constant {
     CLUSTER_NODES_MAP  => '_cluster_nodes_map',
 };
 
+use constant EMPTY_SIGNATURE_COMMANDS => {multi => 1, 'exec' => 1, discard => 1, unwatch => 1};
+
 XSLoader::load('Redis::Cluster::Universal', $VERSION);
 
 
@@ -60,6 +62,7 @@ sub _exec_command {
     Carp::confess(sprintf("[!] Couldn't fetch node for key: '%s'", $hash_tag)) unless (defined($node));
 
     my $handler = $node->get_handler();
+    @args = $self->_prepare_args($command_name, @args);
 
     my $result;
     eval {
@@ -115,6 +118,19 @@ sub get_node_by_hash_tag {
     my $cluster_nodes = $self->get_cluster_nodes();
 
     return $cluster_nodes->[$node_index];
+}
+
+#@staticmethod
+#@method
+sub _prepare_args {
+    my (undef, $command_name, @args) = @_;
+
+    my @result;
+    unless (exists(EMPTY_SIGNATURE_COMMANDS->{$command_name})) {
+        @result = @args;
+    }
+
+    return @result;
 }
 
 #@method
